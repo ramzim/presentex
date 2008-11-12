@@ -1,0 +1,9 @@
+I developed PresenTeX while I was a student at Dalhousie University.
+
+I quite liked using PowerPoint and OpenOffice to make presentations, but I needed equations and didn't like the equation editors in those software packages. I tried making presentations in LaTeX using packages like Beamer, but I found that it took too long to make a presentation.
+
+At some point, I decided I was going to come up with something that would deal with the problem. I figured that I could write some code that would generate equations with LaTeX and export the equations as image files. Then I could insert those image files into my posters and presentations. After digging around on the internet, I found some PHP code, so I went from there to make it what I wanted. I showed the result to some friends who liked it and started using it, and that became PresenTeX on the Web, which is what you find on this site (except that I now use Python rather than PHP to make the images).
+
+One flaw of the PresenTeX website is that it does not keep a history of your commands, so if you don't keep track of what you're doing, it is hard to reproduce your equations. As a result, I started keeping notes on the equations I was rendering. This got me thinking -- it wouldn't be that hard to write a command-line version of PresenTeX so that you could write a shell script (for example) that produced all your equations at once. The command-line version is available on the download page.
+Thank you for visiting the PresenTeX site,
+Ramzi 
