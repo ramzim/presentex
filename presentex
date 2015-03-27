@@ -1,0 +1,251 @@
+#!/usr/bin/python
+
+# SYSTEM-DEPENDENT VARIABLES, MAY NEED TO BE EDITED.
+
+latex = '/usr/bin/latex'
+dvips = '/usr/bin/dvips'
+convert = '/usr/bin/convert'
+
+tdir = "/var/tmp/"    
+
+
+import sys
+import os
+
+class presentex_help:
+    '''presentex is a command-line equivalent to the web-based PHP package,
+PresenTeX. It allows users to easily produce high-quality, colourful
+equations with LaTeX for use in presentations, etc. It is written in
+Python and uses LaTeX, dvips, and imagemagick. It should run on
+Linux/UNIX/Mac systems (not sure about Windows), provided the
+appropriate software packages are installed.
+
+USAGE:
+
+from the command line
+$ presentex 'latex equation in quotes' [options]
+
+Options are:
+
+-f -fg --foreground: Foreground (text) colour, reported as 'r,g,b'
+                     (quotes are required) where r,g,b can span the
+                     integeer values [0,255]. The default is 
+                     '0, 0, 0'.
+
+-b -bg --background: Background color, reported as 'r,g,b' (quotes are
+                     required) where r,g,b can span the integer values
+                     [0,255]. The default is '255, 255, 255'.
+
+-e --enlargement:    Enlargement factor. The default is "1".
+
+-o --output: Name of output file. Extension (.jpg, .gif, .png, etc.)
+                     will be interpreted by Imagemagick. Note that
+                     transparency does not work for all image types,
+                     but it does work for pngs and gifs. The default
+                     is "./eqn.png"
+
+-t --transparent: Option for a transparent background.
+
+-h --help: Produces this help window
+
+-v -a --version --about: Gets information on present version
+
+-i --install: Gives help about setting up presentex on your computer.
+
+EXAMPLES:
+
+presentex '\gamma = \displaystyle{\\frac{\mathcal{A}}{g\delta\sin^2\phi}}' \
+     -fg '190,75,75' -bg '200,200,200' -o 'gamma.jpg' 
+
+presentex -t -o 'pi.gif' -e 3 '\pi = 3.14159\dots' -fg 200,20,20 -t
+
+presentex '\\text{CH}_4+\\text{CO}_2 +\\text{SO}_4^=\\to 2\\text{HCO}_3^-+\\text{H}_2\\text{S}'
+
+
+'''
+
+class presentex_install:
+    '''If you have the appropriate software installed on your computer
+and presentex doesn't start up for you right away, then you should be
+reading this.
+
+At the beginning of the presentex file are a few lines that may
+require editing.
+
+1) The paths. 
+
+You should be able to locate the following lines:
+
+latex = '/usr/bin/latex'
+dvips = '/usr/bin/dvips'
+convert = '/usr/bin/convert'
+
+If these don't match the paths on your computer, then presentex won't
+work. You can check by entering 
+$ which latex
+at the command line (or "which dvips" or "which convert"). Replace the 
+paths in this file if necessary. 
+
+If you get a response like "no latex in (/usr/local/bin/:/usr/bin:...)
+then that means that latex (or dvips, or convert) is not installed on
+your system. You will have to perform that installation before proceeding.
+
+2) The temporary directory. 
+
+You should be able to locate the following lines:
+
+tdir = "/var/tmp/"    
+
+PresenTeX creates temporary files before producing the final
+one. These are placed in a temporary directory within the directory
+/var/tmp/. If /var/tmp/ does not exist on your system, or if you do
+not have access to /var/tmp/ then you will need to change the variable
+tdir to someting you can access.
+
+'''
+
+def version():
+    print "PresenTex v.0.8, August 5, 2008."
+    print "Written by Ramzi Mirshak, ramzi@dal.ca"
+    sys.exit()
+    
+
+def timehash():
+    import md5, time
+    thash = md5.new()
+    tstr = time.time()
+    thash.update(str(tstr))
+    tmp = repr(thash.hexdigest())
+    tmp = tmp.split("\'")
+    return(tmp[1])
+
+def readargv():
+    import re
+    global bg
+    global fg
+    global size
+    global trans
+    global eqn
+    global fname
+    global ftype
+    global density
+    global outdir
+
+    bg = '255,255,255'
+    fg = '0,0,0'
+    size = 2
+    trans = 0
+    eqn = '\int_{-\infty}^\infty f(x) dx = 1'
+    ftype = 'png'
+    fname = 'eqn'
+    density = "120"
+    outdir = './'
+
+    marker = 1
+    if(len(sys.argv)==2):
+        if(sys.argv[1] == '-h' or sys.argv[1] == '--help'):
+            help(presentex_help)
+            sys.exit()
+        if(sys.argv[1] == '-i' or sys.argv[1] == '--install'):
+            help(presentex_install)
+            sys.exit()
+        if(sys.argv[1] == '-v' or sys.argv[1] == '--version' or sys.argv[1] == '-a' or sys.argv[1] == '--about'):
+            version()
+
+
+    while(marker < len(sys.argv)):
+        entry = sys.argv[marker]
+        if entry == '-t' or entry == '--transparent':
+            trans = 1
+            marker = marker + 1
+        elif entry == '-b' or entry == '-bg' or entry == '--background':
+            bg = sys.argv[marker+1]
+            marker = marker + 2
+        elif entry == '-f' or entry == '-fg' or entry == '--foreground':
+            fg = sys.argv[marker+1]
+            marker = marker + 2
+        elif entry == '-e' or entry == '--enlargement':
+            size = float(sys.argv[marker+1])
+            marker = marker + 2
+        elif entry == '-o' or entry == '--output':
+            fname = sys.argv[marker+1]
+            marker = marker + 2
+        elif re.match("^\-", entry):
+            print "Input error: " + " ".join(sys.argv)
+            str = ""
+            for i in range(0,marker):
+                str = str + sys.argv[i] + " "
+            str = re.sub("."," ", str)
+            str = str + "^^"
+            print "             " + str + " Unknown paramter"
+            sys.exit()
+        else: 
+            eqn = entry
+            marker = marker + 1
+
+    parts = fname.split('/')
+    if(len(parts) > 1):
+        outdir = '/'.join(parts[0:-1]) + '/'
+        fname = parts[-1]
+    parts = fname.split('.')
+    if(len(parts) > 1):
+        ftype = parts[1]
+        fname = parts[0]
+    
+    if(marker == 1):
+        print "There were no input arguments. You may want to enter presentex --help"
+        sys.exit()
+
+def main():
+
+
+    readargv()
+
+    bgcols = bg.split(',')
+    fgcols = fg.split(',')
+    for i in range(0,len(bgcols)):
+        bgcols[i] = str(round(float(bgcols[i])/255*10000)/10000)
+        fgcols[i] = str(round(float(fgcols[i])/255*10000)/10000)
+    bg2 = ",".join(bgcols)
+    fg2 = ",".join(fgcols)
+    
+
+    wd = os.getcwd()
+
+    tempdir = tdir + timehash() + "/"
+    os.mkdir(tempdir)
+    os.chdir(tempdir)
+
+
+    latexfile = '\documentclass{article}' + "\n" + '\usepackage{color,amsmath,amssymb}' + "\n" + '\pagecolor[rgb]{' + bg2 + '}' + "\n" + "\\" + 'begin{document}' + "\n" + '\color[rgb]{' + fg2 + '}' + "\n" + "\\" + 'thispagestyle{empty}' + "\n" + '\Huge' + "\n" + '\[ ' + eqn + '\]' + "\n" + '\end{document}'
+
+
+    fout = open(tempdir + fname + ".tex",'w')
+    fout.write(latexfile)
+    fout.close()
+
+    os.popen(latex + " --interaction=nonstopmode " + tempdir + fname).read()
+    os.popen(dvips + " -q -x " + str(size*1000) + " -E " + fname + ".dvi -o " + fname + ".ps")
+    if(trans):
+        bgcols = bg.split(',')
+        rgbbg = '#'
+        for i in range (0,len(bgcols)):
+            bgcols[i] = int(float(bgcols[i]))
+            rgbbg = rgbbg + ('%02x' % bgcols[i])
+            # that's it! '%02x' means zero-padded, 2-digit hex values
+        os.popen(convert + " -transparent \"" + rgbbg + "\" -crop 0x0 -density " + density + " "+ fname + ".ps " + fname + "." + ftype)
+    else:
+        os.popen(convert + " -crop 0x0 -density " + density + " "+ fname + ".ps " + fname + "." + ftype)
+
+    os.chdir(wd)
+    os.system("cp " + tempdir + fname + "." + ftype + " " + outdir + fname + "." + ftype)
+    
+    if(outdir == "./"):
+        print "Image written to \"" + fname + "." + ftype + "\""
+    else:
+        print "Image written to \"" + outdir + fname + "." + ftype + "\""
+
+    os.system("rm -r " + tempdir)
+
+if __name__ == "__main__":
+    main()
